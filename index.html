@@ -1,70 +1,491 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Deer Adventure:Suphes</title> 
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
-        
-        /* Ajuste para que el juego ocupe toda la pantalla */
-        iframe {
-            width: 100vw;
-            height: 100vh;
-            border: none;
-            display: block;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa Interactivo 3D - Santiago Ixcuintla</title>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #061A40; }
+    #map { width: 100%; height: 100%; }
 
-        /* Pantalla de Emergencia (Modo Estudio) */
-        #emergency-screen {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #ffffff; color: #333; padding: 50px;
-            font-family: 'Arial', sans-serif; z-index: 9999;
-            box-sizing: border-box;
-        }
+    /* Atmósfera cálida global en modo Clima Soleado */
+    .atmosfera-solar {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+      background: radial-gradient(circle at 78% 18%, rgba(255, 223, 107, 0.38) 0%, rgba(255, 183, 3, 0.14) 40%, rgba(6, 26, 64, 0) 75%);
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .atmosfera-solar.activa { opacity: 1; }
 
-        .status-line {
-            position: fixed;
-            bottom: 0; width: 100%;
-            background: rgba(0,0,0,0.8); color: #00ff00;
-            font-family: monospace; font-size: 10px; padding: 3px 10px;
-            z-index: 1000;
-            pointer-events: none; /* Para que no interfiera con los clics del juego */
-        }
-    </style>
+    /* Sol 3D con rayos giratorios */
+    .contenedor-sol {
+      position: absolute;
+      top: 8%;
+      right: 16%;
+      width: 240px;
+      height: 240px;
+      pointer-events: none;
+      z-index: 6;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: entradaSol 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes entradaSol {
+      from { opacity: 0; transform: translateY(-40px) scale(0.6); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .rayos-sol {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 230, 128, 0.35) 0deg 10deg,
+        rgba(255, 230, 128, 0) 10deg 25deg
+      );
+      mask-image: radial-gradient(circle, black 25%, transparent 70%);
+      -webkit-mask-image: radial-gradient(circle, black 25%, transparent 70%);
+      animation: girarRayos 28s linear infinite;
+    }
+
+    @keyframes girarRayos {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .esfera-sol {
+      position: relative;
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #FFF3B0 35%, #FFD166 70%, #F77F00 100%);
+      box-shadow:
+        0 0 35px 12px rgba(255, 243, 176, 0.95),
+        0 0 80px 30px rgba(255, 209, 102, 0.75),
+        0 0 140px 60px rgba(252, 163, 17, 0.45);
+      animation: latidoSol 3s infinite alternate ease-in-out;
+    }
+
+    @keyframes latidoSol {
+      from { transform: scale(0.96); }
+      to { transform: scale(1.06); }
+    }
+
+    /* Panel de control izquierdo */
+    .panel-controles {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 265px;
+    }
+
+    .titulo-mapa {
+      background: #061A40;
+      color: #FFD166;
+      border: 2px solid #FFD166;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 800;
+      font-size: 16px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+      letter-spacing: 0.5px;
+    }
+
+    .btn-capa {
+      background: rgba(6, 26, 64, 0.92);
+      color: #FFFFFF;
+      border: 2px solid #FFD166;
+      border-radius: 12px;
+      padding: 12px 15px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.25s ease;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.35);
+    }
+
+    .btn-capa:hover {
+      transform: translateY(-2px);
+      background: #0d2b66;
+    }
+
+    .btn-capa.activo {
+      background: #FFD166;
+      color: #061A40;
+      font-weight: 800;
+      box-shadow: 0 0 22px rgba(255, 209, 102, 0.9);
+    }
+
+    /* Tarjeta de información con fotografía */
+    .tarjeta-info {
+      position: absolute;
+      bottom: 66px;
+      left: 20px;
+      z-index: 10;
+      width: 365px;
+      background: rgba(6, 26, 64, 0.96);
+      border: 2px solid #FFD166;
+      border-radius: 16px;
+      overflow: hidden;
+      color: #FFFFFF;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+      display: none;
+      animation: aparecer 0.35s ease;
+    }
+
+    @keyframes aparecer {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .foto-lugar {
+      width: 100%;
+      height: 155px;
+      object-fit: cover;
+      border-bottom: 2px solid #FFD166;
+      display: block;
+    }
+
+    .contenido-tarjeta {
+      padding: 15px 18px;
+    }
+
+    .tarjeta-info h3 {
+      color: #FFD166;
+      font-size: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tarjeta-info ul {
+      padding-left: 18px;
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .tarjeta-info li { margin-bottom: 5px; }
+
+    /* Ficha fija de coordenadas exactas abajo a la derecha */
+    .ficha-ubicacion {
+      position: absolute;
+      bottom: 22px;
+      right: 20px;
+      z-index: 10;
+      background: rgba(6, 26, 64, 0.94);
+      border: 2px solid #FFD166;
+      border-radius: 14px;
+      padding: 12px 16px;
+      color: #FFFFFF;
+      font-size: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+
+    .ficha-ubicacion strong {
+      color: #FFD166;
+      display: block;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .ayuda-3d {
+      position: absolute;
+      top: 20px;
+      right: 55px;
+      z-index: 10;
+      background: rgba(6, 26, 64, 0.88);
+      color: #FFD166;
+      border: 1.5px solid #FFD166;
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Botoncito en esquina inferior izquierda */
+    .btn-parar-3d {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 15;
+      background: rgba(6, 26, 64, 0.92);
+      color: #FFD166;
+      border: 1.5px solid #FFD166;
+      border-radius: 10px;
+      padding: 7px 13px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+      transition: all 0.2s ease;
+    }
+
+    .btn-parar-3d:hover {
+      background: #FFD166;
+      color: #061A40;
+    }
+
+    /* Estilo del Popup del marcador */
+    .maplibregl-popup-content {
+      background: #061A40 !important;
+      color: #FFFFFF !important;
+      border: 2px solid #FFD166 !important;
+      border-radius: 12px !important;
+      padding: 10px 14px !important;
+      font-family: 'Poppins', sans-serif !important;
+      font-size: 12px !important;
+    }
+    .maplibregl-popup-tip {
+      border-top-color: #FFD166 !important;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="status-line">SUPHES SYSTEM | SBA_System: ON | PRESIONA 'ESC' PARA MODO ESTUDIO | JUEGO CREADO POR: Captest_1730 Y IMPULSADO POR:SUPHES</div>
+  <div id="map"></div>
+  <div id="atmosferaSolar" class="atmosfera-solar"></div>
 
-    <iframe id="portal" src="https://guileless-macaron-8cf763.netlify.app/"></iframe>
+  <div id="contenedorSol" class="contenedor-sol">
+    <div class="rayos-sol"></div>
+    <div class="esfera-sol"></div>
+  </div>
 
-    <div id="emergency-screen">
-        <h1 style="color: #4285f4;">PAGE NO FOUND OF HTTPS://</h1>
-        <p><strong>Introducción:</strong> ANTI CHEATS.</p>
-        <p><i>(Este es tu modo estudio. Presiona 'ESC' de nuevo para volver).</i></p>
+  <div class="ayuda-3d">🖱️ Clic izq: Mover | Clic der / Ctrl: Girar 3D | Rueda: Zoom</div>
+
+  <div class="panel-controles">
+    <div class="titulo-mapa">SANTIAGO IXCUINTLA 3D</div>
+    <button class="btn-capa" id="btn-ubicacion" onclick="activarModo('ubicacion')">📍 Posición y Datos Clave</button>
+    <button class="btn-capa" id="btn-clima" onclick="activarModo('clima')">☀️ Clima Soleado</button>
+    <button class="btn-capa" id="btn-economia" onclick="activarModo('economia')">🌾 Agricultura y Costa</button>
+    <button class="btn-capa" id="btn-reset" onclick="activarModo('reset')">🧭 Vista General 3D</button>
+  </div>
+
+  <div class="tarjeta-info" id="tarjetaInfo">
+    <img id="infoFoto" class="foto-lugar" src="" alt="Santiago Ixcuintla, Nayarit">
+    <div class="contenido-tarjeta">
+      <h3 id="infoTitulo">Título</h3>
+      <ul id="infoLista"></ul>
     </div>
+  </div>
 
-    <script>
-        let isSafe = false;
-        const frame = document.getElementById('portal');
-        const emergency = document.getElementById('emergency-screen');
+  <button class="btn-parar-3d" id="btnParar3D" onclick="alternarSimulacion3D()">⏹ Parar simulación 3D</button>
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === "Escape") {
-                isSafe = !isSafe;
-                if (isSafe) {
-                    emergency.style.display = 'block';
-                    frame.style.display = 'none'; // Usamos none para ocultarlo totalmente
-                } else {
-                    emergency.style.display = 'none';
-                    frame.style.display = 'block';
-                }
-            }
-        });
+  <div class="ficha-ubicacion">
+    <strong>📍 Santiago Ixcuintla, Nayarit</strong>
+    Latitud: 21° 48' 45" N | Longitud: 105° 12' 30" O<br>
+    Altitud media: 18 m s. n. m. (Llanura Costera)
+  </div>
 
-        console.log("SUPHES INN");
-    </script>
+  <script>
+    const CENTRO_SANTIAGO = [-105.2083, 21.8125];
+    let animacionSolId = null;
+    let mapaListo = false;
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          'satelite': {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            ],
+            tileSize: 256,
+            attribution: 'Esri Satellite'
+          },
+          'etiquetas': {
+            type: 'raster',
+            tiles: [
+              'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
+            ],
+            tileSize: 256
+          }
+        },
+        layers: [
+          { id: 'capa-satelite', type: 'raster', source: 'satelite' },
+          { id: 'capa-etiquetas', type: 'raster', source: 'etiquetas' }
+        ]
+      },
+      center: CENTRO_SANTIAGO,
+      zoom: 12.2,
+      minZoom: 9.5,
+      maxBounds: [[-105.80, 21.35], [-104.70, 22.25]],
+      pitch: 58,
+      bearing: -15,
+      maxPitch: 85
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+
+    // Pin marcador exacto en Santiago Ixcuintla con ventana emergente abierta al iniciar
+    const popupInicial = new maplibregl.Popup({ offset: 25, closeOnClick: false })
+      .setHTML('<b style="color:#FFD166; font-size:13px;">📍 Santiago Ixcuintla, Nayarit</b><br>Cabecera Municipal • Costa Norte de Nayarit');
+
+    new maplibregl.Marker({ color: '#FFD166', scale: 1.2 })
+      .setLngLat(CENTRO_SANTIAGO)
+      .setPopup(popupInicial)
+      .addTo(map)
+      .togglePopup();
+
+    map.on('load', () => {
+      map.addSource('zona-santiago', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[
+              [-105.52, 21.62], [-105.32, 21.60], [-105.12, 21.68],
+              [-105.00, 21.82], [-105.06, 21.98], [-105.28, 22.02],
+              [-105.48, 21.92], [-105.55, 21.76], [-105.52, 21.62]
+            ]]
+          }
+        }
+      });
+
+      map.addLayer({
+        id: 'luz-soleada-halo',
+        type: 'line',
+        source: 'zona-santiago',
+        paint: { 'line-color': '#FFD166', 'line-width': 28, 'line-blur': 22, 'line-opacity': 0 }
+      });
+
+      map.addLayer({
+        id: 'luz-soleada-relleno',
+        type: 'fill',
+        source: 'zona-santiago',
+        paint: { 'fill-color': '#FFE066', 'fill-opacity': 0 }
+      });
+
+      map.addLayer({
+        id: 'borde-zona',
+        type: 'line',
+        source: 'zona-santiago',
+        paint: { 'line-color': '#FFF3B0', 'line-width': 3, 'line-opacity': 0 }
+      });
+
+      mapaListo = true;
+      // Muestra la tarjeta de ubicación desde el arranque
+      activarModo('ubicacion');
+    });
+
+    // Datos geográficos importantes + fotografía de la región (Costa / Paisaje de Nayarit)
+    const datos = {
+      ubicacion: {
+        titulo: '📍 Ubicación y Geografía',
+        foto: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+        items: [
+          '<b>Localización:</b> Región Costa Norte de Nayarit; colinda al oeste con el Océano Pacífico, al norte con Tuxpan y Ruiz, y al sur con San Blas.',
+          '<b>Relieve:</b> Predomina la <b>llanura costera</b> fértil (más del 85% del territorio), ideal para asentamientos y agricultura.',
+          '<b>Población:</b> Es uno de los municipios más poblados e históricos de Nayarit (conocido como <i>"La Costa de Oro"</i>).'
+        ]
+      },
+      clima: {
+        titulo: '☀️ Clima Cálido Subhúmedo',
+        foto: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
+        items: [
+          '<b>Temperatura media anual:</b> 26 °C (días muy soleados y calurosos de 32 a 36 °C entre mayo y agosto).',
+          '<b>Lluvias de verano:</b> Precipitaciones abundantes de junio a septiembre (aprox. 1,200 mm al año).',
+          '<b>Importancia:</b> Su clima tropical cálido favorece la biodiversidad de esteros y cultivos de alto rendimiento.'
+        ]
+      },
+      economia: {
+        titulo: '🌾 Agricultura, Manglares y Costa',
+        foto: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?auto=format&fit=crop&w=800&q=80',
+        items: [
+          '<b>Motor agrícola:</b> Líder estatal en producción de <b>tabaco, frijol, sorgo, maíz y mango</b>.',
+          '<b>Zona costera y pesca:</b> Playas como <b>Los Corchos</b> y <b>Boca de Camichín</b> destacan por la pesca de camarón y ostión, además de los manglares de <b>Marismas Nacionales</b>.'
+        ]
+      }
+    };
+
+    function setOpacidadSegura(capaId, prop, valor) {
+      if (mapaListo && map.getLayer(capaId)) {
+        map.setPaintProperty(capaId, prop, valor);
+      }
+    }
+
+    function detenerAnimaciones() {
+      if (animacionSolId) { cancelAnimationFrame(animacionSolId); animacionSolId = null; }
+    }
+
+    function animarPulsoSolar() {
+      let t = 0;
+      function frame() {
+        t += 0.04;
+        setOpacidadSegura('luz-soleada-relleno', 'fill-opacity', 0.24 + Math.sin(t) * 0.08);
+        animacionSolId = requestAnimationFrame(frame);
+      }
+      frame();
+    }
+
+    function alternarSimulacion3D() {
+      window.open("https://www.canva.com/design/DAHa7jz3pkA/diW0IKNlvNGFHhswMglclg/edit", "_blank");
+    }
+
+    function activarModo(modo) {
+      detenerAnimaciones();
+      document.querySelectorAll('.btn-capa').forEach(b => b.classList.remove('activo'));
+
+      const tarjeta = document.getElementById('tarjetaInfo');
+      const contenedorSol = document.getElementById('contenedorSol');
+      const atmosferaSolar = document.getElementById('atmosferaSolar');
+
+      setOpacidadSegura('luz-soleada-relleno', 'fill-opacity', 0);
+      setOpacidadSegura('luz-soleada-halo', 'line-opacity', 0);
+      setOpacidadSegura('borde-zona', 'line-opacity', 0);
+
+      contenedorSol.style.display = 'none';
+      atmosferaSolar.classList.remove('activa');
+
+      if (modo === 'reset') {
+        tarjeta.style.display = 'none';
+        map.flyTo({ center: CENTRO_SANTIAGO, zoom: 12.2, pitch: 58, bearing: -15, duration: 1500 });
+        return;
+      }
+
+      document.getElementById('btn-' + modo).classList.add('activo');
+
+      if (modo === 'ubicacion') {
+        map.flyTo({ center: CENTRO_SANTIAGO, zoom: 13.0, pitch: 60, bearing: -10, duration: 1500 });
+      } else if (modo === 'clima') {
+        contenedorSol.style.display = 'flex';
+        atmosferaSolar.classList.add('activa');
+        setOpacidadSegura('luz-soleada-halo', 'line-opacity', 0.85);
+        setOpacidadSegura('borde-zona', 'line-opacity', 0.95);
+        animarPulsoSolar();
+
+        map.flyTo({ center: CENTRO_SANTIAGO, zoom: 11.1, pitch: 62, bearing: 12, duration: 1600 });
+      } else if (modo === 'economia') {
+        map.flyTo({ center: [-105.45, 21.74], zoom: 11.8, pitch: 62, bearing: -20, duration: 1600 });
+      }
+
+      document.getElementById('infoFoto').src = datos[modo].foto;
+      document.getElementById('infoTitulo').innerHTML = datos[modo].titulo;
+      document.getElementById('infoLista').innerHTML = datos[modo].items.map(i => `<li>${i}</li>`).join('');
+      tarjeta.style.display = 'block';
+    }
+  </script>
 </body>
 </html>
