@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Deer Adventure:Suphes</title> 
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+        
+        /* Ajuste para que el juego ocupe toda la pantalla */
+        iframe {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            display: block;
+        }
+
+        /* Pantalla de Emergencia (Modo Estudio) */
+        #emergency-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #ffffff; color: #333; padding: 50px;
+            font-family: 'Arial', sans-serif; z-index: 9999;
+            box-sizing: border-box;
+        }
+
+        .status-line {
+            position: fixed;
+            bottom: 0; width: 100%;
+            background: rgba(0,0,0,0.8); color: #00ff00;
+            font-family: monospace; font-size: 10px; padding: 3px 10px;
+            z-index: 1000;
+            pointer-events: none; /* Para que no interfiera con los clics del juego */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status-line">SUPHES SYSTEM | SBA_System: ON | PRESIONA 'ESC' PARA MODO ESTUDIO | JUEGO CREADO POR: Captest_1730 Y IMPULSADO POR:SUPHES</div>
+
+    <iframe id="portal" src="https://guileless-macaron-8cf763.netlify.app/"></iframe>
+
+    <div id="emergency-screen">
+        <h1 style="color: #4285f4;">PAGE NO FOUND OF HTTPS://</h1>
+        <p><strong>Introducción:</strong> ANTI CHEATS.</p>
+        <p><i>(Este es tu modo estudio. Presiona 'ESC' de nuevo para volver).</i></p>
+    </div>
+
+    <script>
+        let isSafe = false;
+        const frame = document.getElementById('portal');
+        const emergency = document.getElementById('emergency-screen');
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "Escape") {
+                isSafe = !isSafe;
+                if (isSafe) {
+                    emergency.style.display = 'block';
+                    frame.style.display = 'none'; // Usamos none para ocultarlo totalmente
+                } else {
+                    emergency.style.display = 'none';
+                    frame.style.display = 'block';
+                }
+            }
+        });
+
+        console.log("SUPHES INN");
+    </script>
+</body>
+</html>
