@@ -3,45 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mapa Interactivo 3D - Santiago Ixcuintla</title>
+  <title>SANTIAGO IXCUINTLA 3D [POR EMMANUEL😋]</title>
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
-    body, html { width: 100%; height: 100%; overflow: hidden; background: #061A40; }
-    #map { width: 100%; height: 100%; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #030B1C; }
+    #map {
+      width: 100%;
+      height: 100%;
+      filter: contrast(1.06) saturate(1.15);
+      transform: translateZ(0);
+    }
 
-    /* Atmósfera cálida global en modo Clima Soleado */
+    /* Viñeta cinematográfica sutil en los bordes */
+    .vineta-cinematica {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      box-shadow: inset 0 0 95px rgba(2, 8, 23, 0.75);
+    }
+
+    /* Atmósfera cálida global en modo Medio Físico / Clima */
     .atmosfera-solar {
       position: absolute;
       inset: 0;
       pointer-events: none;
       z-index: 4;
-      background: radial-gradient(circle at 78% 18%, rgba(255, 223, 107, 0.38) 0%, rgba(255, 183, 3, 0.14) 40%, rgba(6, 26, 64, 0) 75%);
+      background: radial-gradient(circle at 78% 16%, rgba(255, 223, 107, 0.48) 0%, rgba(255, 158, 0, 0.20) 38%, rgba(6, 26, 64, 0) 75%);
       opacity: 0;
       transition: opacity 0.8s ease;
+      mix-blend-mode: screen;
+      will-change: opacity;
+      transform: translateZ(0);
     }
     .atmosfera-solar.activa { opacity: 1; }
 
-    /* Sol 3D con rayos giratorios */
+    /* Sol 3D con corona y rayos volumétricos acelerados por GPU */
     .contenedor-sol {
       position: absolute;
-      top: 8%;
-      right: 16%;
-      width: 240px;
-      height: 240px;
+      top: 6%;
+      right: 14%;
+      width: 280px;
+      height: 280px;
       pointer-events: none;
       z-index: 6;
       display: none;
       align-items: center;
       justify-content: center;
       animation: entradaSol 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      will-change: transform, opacity;
+      transform: translateZ(0);
     }
 
     @keyframes entradaSol {
-      from { opacity: 0; transform: translateY(-40px) scale(0.6); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: translate3d(0, -50px, 0) scale(0.5); }
+      to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
     }
 
     .rayos-sol {
@@ -51,209 +70,273 @@
       border-radius: 50%;
       background: repeating-conic-gradient(
         from 0deg,
-        rgba(255, 230, 128, 0.35) 0deg 10deg,
-        rgba(255, 230, 128, 0) 10deg 25deg
+        rgba(255, 235, 140, 0.45) 0deg 8deg,
+        rgba(255, 235, 140, 0) 8deg 22deg
       );
-      mask-image: radial-gradient(circle, black 25%, transparent 70%);
-      -webkit-mask-image: radial-gradient(circle, black 25%, transparent 70%);
-      animation: girarRayos 28s linear infinite;
+      mask-image: radial-gradient(circle, black 22%, transparent 72%);
+      -webkit-mask-image: radial-gradient(circle, black 22%, transparent 72%);
+      animation: girarRayos 24s linear infinite;
+      will-change: transform;
     }
 
     @keyframes girarRayos {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+      from { transform: rotate(0deg) translateZ(0); }
+      to { transform: rotate(360deg) translateZ(0); }
     }
 
     .esfera-sol {
       position: relative;
-      width: 78px;
-      height: 78px;
+      width: 86px;
+      height: 86px;
       border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #FFF3B0 35%, #FFD166 70%, #F77F00 100%);
+      background: radial-gradient(circle at 35% 35%, #FFFFFF 0%, #FFF7C2 30%, #FFD166 65%, #F77F00 100%);
       box-shadow:
-        0 0 35px 12px rgba(255, 243, 176, 0.95),
-        0 0 80px 30px rgba(255, 209, 102, 0.75),
-        0 0 140px 60px rgba(252, 163, 17, 0.45);
-      animation: latidoSol 3s infinite alternate ease-in-out;
+        0 0 40px 15px rgba(255, 243, 176, 0.98),
+        0 0 95px 38px rgba(255, 209, 102, 0.85),
+        0 0 170px 75px rgba(252, 163, 17, 0.55);
+      animation: latidoSol 2.8s infinite alternate ease-in-out;
+      will-change: transform;
     }
 
     @keyframes latidoSol {
-      from { transform: scale(0.96); }
-      to { transform: scale(1.06); }
+      from { transform: scale(0.95) translateZ(0); }
+      to { transform: scale(1.08) translateZ(0); }
     }
 
-    /* Panel de control izquierdo */
+    /* Panel de control izquierdo estilo Glassmorphism optimizado */
     .panel-controles {
       position: absolute;
-      top: 20px;
+      top: 16px;
       left: 20px;
       z-index: 10;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      width: 265px;
+      gap: 6px;
+      width: 285px;
+      transform: translateZ(0);
     }
 
     .titulo-mapa {
-      background: #061A40;
+      background: linear-gradient(135deg, rgba(6, 26, 64, 0.92), rgba(14, 48, 110, 0.92));
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       color: #FFD166;
       border: 2px solid #FFD166;
       border-radius: 14px;
-      padding: 12px 16px;
-      font-weight: 800;
-      font-size: 16px;
+      padding: 10px 12px;
+      font-weight: 900;
+      font-size: 13.5px;
       text-align: center;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
-      letter-spacing: 0.5px;
+      box-shadow: 0 0 25px rgba(255, 209, 102, 0.35), 0 10px 25px rgba(0,0,0,0.6);
+      letter-spacing: 0.4px;
+      text-shadow: 0 2px 10px rgba(255, 209, 102, 0.5);
     }
 
     .btn-capa {
-      background: rgba(6, 26, 64, 0.92);
-      color: #FFFFFF;
-      border: 2px solid #FFD166;
-      border-radius: 12px;
-      padding: 12px 15px;
-      font-size: 14px;
+      background: rgba(6, 22, 54, 0.86);
+      color: #F8FAFC;
+      border: 1.5px solid rgba(255, 209, 102, 0.65);
+      border-radius: 11px;
+      padding: 8px 13px;
+      font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 10px;
-      transition: all 0.25s ease;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.35);
+      gap: 8px;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
 
     .btn-capa:hover {
-      transform: translateY(-2px);
-      background: #0d2b66;
+      transform: translateX(5px);
+      background: rgba(18, 52, 118, 0.95);
+      border-color: #FFD166;
+      box-shadow: 0 0 15px rgba(255, 209, 102, 0.45);
     }
 
     .btn-capa.activo {
-      background: #FFD166;
-      color: #061A40;
+      background: linear-gradient(135deg, #FFD166 0%, #FFB703 100%);
+      color: #04122E;
       font-weight: 800;
-      box-shadow: 0 0 22px rgba(255, 209, 102, 0.9);
+      border-color: #FFF3B0;
+      transform: translateX(6px);
+      box-shadow: 0 0 24px rgba(255, 209, 102, 0.95);
     }
 
-    /* Tarjeta de información con fotografía */
+    /* Tarjeta de información Glassmorphism con fotografía */
     .tarjeta-info {
       position: absolute;
-      bottom: 66px;
+      bottom: 62px;
       left: 20px;
       z-index: 10;
-      width: 365px;
-      background: rgba(6, 26, 64, 0.96);
+      width: 415px;
+      max-height: 325px;
+      background: rgba(5, 19, 48, 0.90);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 2px solid #FFD166;
-      border-radius: 16px;
-      overflow: hidden;
+      border-radius: 18px;
+      overflow-y: auto;
       color: #FFFFFF;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 25px rgba(255, 209, 102, 0.25);
       display: none;
-      animation: aparecer 0.35s ease;
+      animation: aparecer 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      transform: translateZ(0);
     }
 
+    .tarjeta-info::-webkit-scrollbar { width: 6px; }
+    .tarjeta-info::-webkit-scrollbar-track { background: rgba(6, 26, 64, 0.5); }
+    .tarjeta-info::-webkit-scrollbar-thumb { background: #FFD166; border-radius: 4px; }
+
     @keyframes aparecer {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translate3d(0, 20px, 0) scale(0.97); }
+      to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
     }
 
     .foto-lugar {
       width: 100%;
-      height: 155px;
+      height: 115px;
       object-fit: cover;
       border-bottom: 2px solid #FFD166;
       display: block;
     }
 
     .contenido-tarjeta {
-      padding: 15px 18px;
+      padding: 13px 16px;
     }
 
     .tarjeta-info h3 {
       color: #FFD166;
-      font-size: 16px;
+      font-size: 15px;
       margin-bottom: 8px;
       display: flex;
       align-items: center;
       gap: 8px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
     }
 
     .tarjeta-info ul {
-      padding-left: 18px;
-      font-size: 12.5px;
-      line-height: 1.5;
+      padding-left: 16px;
+      font-size: 12px;
+      line-height: 1.48;
     }
 
-    .tarjeta-info li { margin-bottom: 5px; }
+    .tarjeta-info li { margin-bottom: 6px; }
+    .tarjeta-info b { color: #FFD166; }
 
     /* Ficha fija de coordenadas exactas abajo a la derecha */
     .ficha-ubicacion {
       position: absolute;
-      bottom: 22px;
+      bottom: 20px;
       right: 20px;
       z-index: 10;
-      background: rgba(6, 26, 64, 0.94);
-      border: 2px solid #FFD166;
+      background: rgba(5, 19, 48, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.8px solid #FFD166;
       border-radius: 14px;
-      padding: 12px 16px;
+      padding: 11px 15px;
       color: #FFFFFF;
-      font-size: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+      font-size: 11.5px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      transform: translateZ(0);
     }
 
     .ficha-ubicacion strong {
       color: #FFD166;
       display: block;
-      font-size: 13px;
+      font-size: 12.5px;
       margin-bottom: 2px;
     }
 
     .ayuda-3d {
       position: absolute;
-      top: 20px;
+      top: 16px;
       right: 55px;
       z-index: 10;
-      background: rgba(6, 26, 64, 0.88);
+      background: rgba(5, 19, 48, 0.86);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       color: #FFD166;
-      border: 1.5px solid #FFD166;
+      border: 1.5px solid rgba(255, 209, 102, 0.8);
       border-radius: 20px;
-      padding: 7px 14px;
+      padding: 7px 15px;
       font-size: 12px;
       font-weight: 600;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+      transform: translateZ(0);
     }
 
-    /* Botoncito en esquina inferior izquierda */
+    /* Botoncito enlace en esquina inferior izquierda */
     .btn-parar-3d {
       position: absolute;
       bottom: 20px;
       left: 20px;
       z-index: 15;
-      background: rgba(6, 26, 64, 0.92);
+      background: rgba(5, 19, 48, 0.90);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       color: #FFD166;
-      border: 1.5px solid #FFD166;
-      border-radius: 10px;
-      padding: 7px 13px;
+      border: 1.8px solid #FFD166;
+      border-radius: 11px;
+      padding: 7px 14px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-block;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
-      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.55), 0 0 12px rgba(255, 209, 102, 0.25);
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      transform: translateZ(0);
     }
 
     .btn-parar-3d:hover {
       background: #FFD166;
       color: #061A40;
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(255, 209, 102, 0.85);
+    }
+
+    /* Marcador pulsante 3D personalizado */
+    .marcador-pulso {
+      width: 22px;
+      height: 22px;
+      background: #FFD166;
+      border: 3px solid #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 0 18px #FFD166, 0 0 35px #F77F00;
+      cursor: pointer;
+      position: relative;
+      will-change: transform;
+    }
+    .marcador-pulso::after {
+      content: '';
+      position: absolute;
+      top: -9px;
+      left: -9px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid #FFD166;
+      animation: ondaRadar 2.2s infinite ease-out;
+      will-change: transform, opacity;
+    }
+    @keyframes ondaRadar {
+      0% { transform: scale(0.6) translateZ(0); opacity: 1; }
+      100% { transform: scale(2.1) translateZ(0); opacity: 0; }
     }
 
     /* Estilo del Popup del marcador */
     .maplibregl-popup-content {
-      background: #061A40 !important;
+      background: rgba(5, 19, 48, 0.94) !important;
       color: #FFFFFF !important;
       border: 2px solid #FFD166 !important;
       border-radius: 12px !important;
       padding: 10px 14px !important;
       font-family: 'Poppins', sans-serif !important;
       font-size: 12px !important;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7) !important;
     }
     .maplibregl-popup-tip {
       border-top-color: #FFD166 !important;
@@ -263,6 +346,7 @@
 <body>
 
   <div id="map"></div>
+  <div class="vineta-cinematica"></div>
   <div id="atmosferaSolar" class="atmosfera-solar"></div>
 
   <div id="contenedorSol" class="contenedor-sol">
@@ -273,10 +357,13 @@
   <div class="ayuda-3d">🖱️ Clic izq: Mover | Clic der / Ctrl: Girar 3D | Rueda: Zoom</div>
 
   <div class="panel-controles">
-    <div class="titulo-mapa">SANTIAGO IXCUINTLA 3D [Hecho Por Emmanuel😋]</div>
-    <button class="btn-capa" id="btn-ubicacion" onclick="activarModo('ubicacion')">📍 Posición y Datos Clave</button>
-    <button class="btn-capa" id="btn-clima" onclick="activarModo('clima')">☀️ Clima Soleado</button>
-    <button class="btn-capa" id="btn-economia" onclick="activarModo('economia')">🌾 Agricultura y Costa</button>
+    <div class="titulo-mapa">SANTIAGO IXCUINTLA 3D [POR EMMANUEL😋]</div>
+    <button class="btn-capa" id="btn-generales" onclick="activarModo('generales')">📍 1. Datos Generales</button>
+    <button class="btn-capa" id="btn-fisico" onclick="activarModo('fisico')">☀️ 2. Medio Físico y Clima</button>
+    <button class="btn-capa" id="btn-poblacion" onclick="activarModo('poblacion')">👥 3. Población y Sociedad</button>
+    <button class="btn-capa" id="btn-economia" onclick="activarModo('economia')">🌾 4. Economía y Turismo</button>
+    <button class="btn-capa" id="btn-cultura" onclick="activarModo('cultura')">🎭 5. Cultura e Historia</button>
+    <button class="btn-capa" id="btn-reflexion" onclick="activarModo('reflexion')">💡 6. Identidad y Entorno</button>
     <button class="btn-capa" id="btn-reset" onclick="activarModo('reset')">🧭 Vista General 3D</button>
   </div>
 
@@ -288,17 +375,17 @@
     </div>
   </div>
 
-  <button class="btn-parar-3d" id="btnParar3D" onclick="alternarSimulacion3D()">⏹ Parar simulación 3D</button>
+  <a class="btn-parar-3d" id="btnParar3D" href="https://www.canva.com/design/DAHa7jz3pkA/diW0IKNlvNGFHhswMglclg/edit" target="_blank" rel="noopener noreferrer">⏹ Parar simulación 3D</a>
 
   <div class="ficha-ubicacion">
     <strong>📍 Santiago Ixcuintla, Nayarit</strong>
-    Latitud: 21° 48' 45" N | Longitud: 105° 12' 30" O<br>
-    Altitud media: 18 m s. n. m. (Llanura Costera)
+    21°35'–22°05' N | 104°57'–105°36' O<br>
+    Superficie: 1,723.7 km² • Altitud media: 18 m
   </div>
 
   <script>
     const CENTRO_SANTIAGO = [-105.2083, 21.8125];
-    let animacionSolId = null;
+    let animacionSolTimer = null;
     let mapaListo = false;
 
     const map = new maplibregl.Map({
@@ -320,10 +407,43 @@
               'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
             ],
             tileSize: 256
+          },
+          /* DEM optimizado a maxzoom 12: conserva todo el relieve 3D pero pesa 4x menos al volar */
+          'terreno-dem': {
+            type: 'raster-dem',
+            tiles: [
+              'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+            ],
+            encoding: 'terrarium',
+            tileSize: 256,
+            maxzoom: 12
           }
+        },
+        terrain: {
+          source: 'terreno-dem',
+          exaggeration: 2.4
+        },
+        sky: {
+          'sky-color': '#0B397A',
+          'sky-horizon-blend': 0.5,
+          'horizon-color': '#7CC6FE',
+          'horizon-fog-blend': 0.7,
+          'fog-color': '#061A40',
+          'fog-ground-blend': 0.4
         },
         layers: [
           { id: 'capa-satelite', type: 'raster', source: 'satelite' },
+          {
+            id: 'sombreado-relieve',
+            type: 'hillshade',
+            source: 'terreno-dem',
+            paint: {
+              'hillshade-exaggeration': 0.65,
+              'hillshade-shadow-color': '#020817',
+              'hillshade-highlight-color': '#FFF3B0',
+              'hillshade-accent-color': '#FFD166'
+            }
+          },
           { id: 'capa-etiquetas', type: 'raster', source: 'etiquetas' }
         ]
       },
@@ -331,22 +451,51 @@
       zoom: 12.2,
       minZoom: 9.5,
       maxBounds: [[-105.80, 21.35], [-104.70, 22.25]],
-      pitch: 58,
+      pitch: 64,
       bearing: -15,
-      maxPitch: 85
+      maxPitch: 85,
+      fadeDuration: 0,
+      maxTileCacheSize: 250,
+      refreshExpiredTiles: false,
+      antialias: false
     });
 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 
-    // Pin marcador exacto en Santiago Ixcuintla con ventana emergente abierta al iniciar
-    const popupInicial = new maplibregl.Popup({ offset: 25, closeOnClick: false })
-      .setHTML('<b style="color:#FFD166; font-size:13px;">📍 Santiago Ixcuintla, Nayarit</b><br>Cabecera Municipal • Costa Norte de Nayarit');
+    const puntosInteres = [
+      {
+        coords: CENTRO_SANTIAGO,
+        titulo: '📍 Santiago Ixcuintla (Cabecera)',
+        desc: 'Corazón político y agrícola • Río Grande de Santiago',
+        abierto: true
+      },
+      {
+        coords: [-105.475, 21.905],
+        titulo: '🏝️ Isla de Mexcaltitán',
+        desc: 'Pueblo Mágico • Cuna mítica de Aztlán',
+        abierto: false
+      },
+      {
+        coords: [-105.495, 21.745],
+        titulo: '🏖️ Playa Los Corchos',
+        desc: 'Litoral del Pacífico • Pesca y turismo costero',
+        abierto: false
+      }
+    ];
 
-    new maplibregl.Marker({ color: '#FFD166', scale: 1.2 })
-      .setLngLat(CENTRO_SANTIAGO)
-      .setPopup(popupInicial)
-      .addTo(map)
-      .togglePopup();
+    puntosInteres.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'marcador-pulso';
+      const popup = new maplibregl.Popup({ offset: 22, closeOnClick: false })
+        .setHTML(`<b style="color:#FFD166; font-size:13px;">${p.titulo}</b><br>${p.desc}`);
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(p.coords)
+        .setPopup(popup)
+        .addTo(map);
+
+      if (p.abierto) marker.togglePopup();
+    });
 
     map.on('load', () => {
       map.addSource('zona-santiago', {
@@ -368,54 +517,99 @@
         id: 'luz-soleada-halo',
         type: 'line',
         source: 'zona-santiago',
-        paint: { 'line-color': '#FFD166', 'line-width': 28, 'line-blur': 22, 'line-opacity': 0 }
+        paint: {
+          'line-color': '#FFD166',
+          'line-width': 32,
+          'line-blur': 24,
+          'line-opacity': 0,
+          'line-opacity-transition': { duration: 400 }
+        }
       });
 
       map.addLayer({
         id: 'luz-soleada-relleno',
         type: 'fill',
         source: 'zona-santiago',
-        paint: { 'fill-color': '#FFE066', 'fill-opacity': 0 }
+        paint: {
+          'fill-color': '#FFE066',
+          'fill-opacity': 0,
+          'fill-opacity-transition': { duration: 900 }
+        }
       });
 
       map.addLayer({
         id: 'borde-zona',
         type: 'line',
         source: 'zona-santiago',
-        paint: { 'line-color': '#FFF3B0', 'line-width': 3, 'line-opacity': 0 }
+        paint: {
+          'line-color': '#FFF3B0',
+          'line-width': 3.5,
+          'line-opacity': 0,
+          'line-opacity-transition': { duration: 400 }
+        }
       });
 
       mapaListo = true;
-      // Muestra la tarjeta de ubicación desde el arranque
-      activarModo('ubicacion');
+      activarModo('generales');
     });
 
-    // Datos geográficos importantes + fotografía de la región (Costa / Paisaje de Nayarit)
     const datos = {
-      ubicacion: {
-        titulo: '📍 Ubicación y Geografía',
+      generales: {
+        titulo: '📍 1. Datos Generales del Municipio',
         foto: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
         items: [
-          '<b>Localización:</b> Región Costa Norte de Nayarit; colinda al oeste con el Océano Pacífico, al norte con Tuxpan y Ruiz, y al sur con San Blas.',
-          '<b>Relieve:</b> Predomina la <b>llanura costera</b> fértil (más del 85% del territorio), ideal para asentamientos y agricultura.',
-          '<b>Población:</b> Es uno de los municipios más poblados e históricos de Nayarit (conocido como <i>"La Costa de Oro"</i>).'
+          '<b>Nombre del municipio:</b> Santiago Ixcuintla, Nayarit.',
+          '<b>Ubicación (coordenadas):</b> Región Costa Norte de Nayarit; entre los paralelos 21°35\' y 22°05\' de latitud norte, y meridianos 104°57\' y 105°36\' de longitud oeste.',
+          '<b>Significado del nombre:</b> <i>Santiago</i> en honor al Apóstol Santiago; <i>Ixcuintla</i> proviene del náhuatl <i>Itzcuintlan</i> ("lugar donde abundan los perros" o xoloitzcuintles).',
+          '<b>Colindancias:</b> Al norte con Tuxpan y Ruiz; al este con El Nayar y Tepic; al sur con San Blas; y al oeste con el Océano Pacífico.',
+          '<b>Superficie territorial:</b> 1,723.7 km² (aprox. 6.2% del territorio estatal).'
         ]
       },
-      clima: {
-        titulo: '☀️ Clima Cálido Subhúmedo',
+      fisico: {
+        titulo: '☀️ 2. Medio Físico, Relieve y Clima',
         foto: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
         items: [
-          '<b>Temperatura media anual:</b> 26 °C (días muy soleados y calurosos de 32 a 36 °C entre mayo y agosto).',
-          '<b>Lluvias de verano:</b> Precipitaciones abundantes de junio a septiembre (aprox. 1,200 mm al año).',
-          '<b>Importancia:</b> Su clima tropical cálido favorece la biodiversidad de esteros y cultivos de alto rendimiento.'
+          '<b>1. Relieve predominante:</b> Llanura costera aluvial plana y muy fértil (más del 85% del municipio), con lomeríos suaves hacia el oriente.',
+          '<b>2. Ríos y cuerpos de agua:</b> Río Grande de Santiago, Río San Pedro Mezquital, lagunas costeras, esteros (Camichín, Mezcaltitán) y Marismas Nacionales.',
+          '<b>3. Vegetación y clima:</b> Clima cálido subhúmedo con lluvias en verano (temp. media 26 °C); vegetación de manglar en costa, selva baja caducifolia y zonas agrícolas.',
+          '<b>4. Planicies y elevaciones:</b> Amplia planicie costera del Pacífico y estribaciones bajas de la Sierra Madre Occidental al este (cerros como El Coastecomate).',
+          '<b>5. Fauna y flora:</b> Flora: mangle rojo/blanco, ceiba, guanacaste, palma de coco. Fauna: cocodrilo de río, garzas, pelícanos, jaguarundi, venado cola blanca, camarón y ostión.'
+        ]
+      },
+      poblacion: {
+        titulo: '👥 3. Población y Dinámica Social',
+        foto: 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?auto=format&fit=crop&w=800&q=80',
+        items: [
+          '<b>1. Habitantes totales:</b> 93,981 habitantes (Censo INEGI 2020).',
+          '<b>2. Hombres y mujeres:</b> Aproximadamente 47,280 hombres (50.3%) y 46,701 mujeres (49.7%).',
+          '<b>3. Localidad más poblada:</b> La cabecera municipal, Santiago Ixcuintla (con más de 19,000 habitantes), seguida de Villa Hidalgo y Yago.',
+          '<b>4. Nivel de escolaridad:</b> Grado promedio de escolaridad de 8.6 años (equivalente a segundo/tercer grado de secundaria concluido).',
+          '<b>5. Principales problemáticas:</b> Vulnerabilidad a inundaciones por desbordamiento de ríos y huracanes, migración juvenil en busca de empleo, contaminación de esteros y falta de industrialización local.'
         ]
       },
       economia: {
-        titulo: '🌾 Agricultura, Manglares y Costa',
+        titulo: '🌾 4. Actividades Económicas y Turismo',
         foto: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?auto=format&fit=crop&w=800&q=80',
         items: [
-          '<b>Motor agrícola:</b> Líder estatal en producción de <b>tabaco, frijol, sorgo, maíz y mango</b>.',
-          '<b>Zona costera y pesca:</b> Playas como <b>Los Corchos</b> y <b>Boca de Camichín</b> destacan por la pesca de camarón y ostión, además de los manglares de <b>Marismas Nacionales</b>.'
+          '<b>1. Actividades principales:</b> Agricultura comercial, pesca ribereña y acuacultura, ganadería bovina, comercio y turismo ecológico/de playa.',
+          '<b>2. Productos y servicios destacados:</b> Líder nacional en tabaco; gran productor de frijol, sorgo, maíz, mango, jitomate, además de camarón, ostión y pescado.',
+          '<b>3. Principales atractivos turísticos:</b> Isla de Mexcaltitán (Pueblo Mágico), Playa Los Corchos, Boca de Camichín, Playa El Sesteo y recorridos por manglares.'
+        ]
+      },
+      cultura: {
+        titulo: '🎭 5. Cultura, Tradiciones e Historia',
+        foto: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=800&q=80',
+        items: [
+          '<b>1. Tradiciones y festividades:</b> Feria Nacional de Primavera (mayo), fiestas patronales de San Pedro y San Pablo en Mexcaltitán (29 de junio, con regata de canoas), gastronomía a base de mariscos (pescado zarandeado, ceviche, tlaxtihuilli).',
+          '<b>2. Lugares históricos y naturales importantes:</b> Isla de Mexcaltitán (considerada cuna mítica de Aztlán), Templo del Señor de la Ascensión, el malecón del Río Santiago y la Reserva de la Biosfera Marismas Nacionales.'
+        ]
+      },
+      reflexion: {
+        titulo: '💡 6. Identidad y Relación con el Entorno',
+        foto: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80',
+        items: [
+          '<b>1. ¿Qué hace especial a Santiago Ixcuintla?:</b> Su riqueza hídrica y cultural única, conocida como <i>"La Costa de Oro"</i>, al albergar a la mítica Isla de Mexcaltitán y ser el corazón agrícola y pesquero del norte de Nayarit.',
+          '<b>2. Relación entre naturaleza y actividades:</b> Sus suelos planos y fértiles regados por el Río Santiago permiten una agricultura altamente productiva, mientras que su litoral, esteros y manglares sostienen la pesca de camarón y ostión, moldeando tanto la economía como la gastronomía y festividades de su gente.'
         ]
       }
     };
@@ -426,22 +620,44 @@
       }
     }
 
-    function detenerAnimaciones() {
-      if (animacionSolId) { cancelAnimationFrame(animacionSolId); animacionSolId = null; }
-    }
-
-    function animarPulsoSolar() {
-      let t = 0;
-      function frame() {
-        t += 0.04;
-        setOpacidadSegura('luz-soleada-relleno', 'fill-opacity', 0.24 + Math.sin(t) * 0.08);
-        animacionSolId = requestAnimationFrame(frame);
+    function actualizarCielo(soleado) {
+      if (!mapaListo) return;
+      if (soleado) {
+        map.setSky({
+          'sky-color': '#F77F00',
+          'sky-horizon-blend': 0.55,
+          'horizon-color': '#FFD166',
+          'horizon-fog-blend': 0.75,
+          'fog-color': '#FCBF49',
+          'fog-ground-blend': 0.35
+        });
+      } else {
+        map.setSky({
+          'sky-color': '#0B397A',
+          'sky-horizon-blend': 0.5,
+          'horizon-color': '#7CC6FE',
+          'horizon-fog-blend': 0.7,
+          'fog-color': '#061A40',
+          'fog-ground-blend': 0.4
+        });
       }
-      frame();
     }
 
-    function alternarSimulacion3D() {
-      window.open("https://www.canva.com/design/DAHa7jz3pkA/diW0IKNlvNGFHhswMglclg/edit", "_blank");
+    function detenerAnimaciones() {
+      if (animacionSolTimer) {
+        clearInterval(animacionSolTimer);
+        animacionSolTimer = null;
+      }
+    }
+
+    /* Pulso solar suave usando transiciones nativas de GPU en vez de saturar 60fps */
+    function animarPulsoSolar() {
+      let alto = true;
+      setOpacidadSegura('luz-soleada-relleno', 'fill-opacity', 0.30);
+      animacionSolTimer = setInterval(() => {
+        alto = !alto;
+        setOpacidadSegura('luz-soleada-relleno', 'fill-opacity', alto ? 0.32 : 0.16);
+      }, 1000);
     }
 
     function activarModo(modo) {
@@ -458,32 +674,40 @@
 
       contenedorSol.style.display = 'none';
       atmosferaSolar.classList.remove('activa');
+      actualizarCielo(false);
 
       if (modo === 'reset') {
         tarjeta.style.display = 'none';
-        map.flyTo({ center: CENTRO_SANTIAGO, zoom: 12.2, pitch: 58, bearing: -15, duration: 1500 });
+        map.flyTo({ center: CENTRO_SANTIAGO, zoom: 12.2, pitch: 64, bearing: -15, duration: 1400 });
         return;
       }
 
       document.getElementById('btn-' + modo).classList.add('activo');
 
-      if (modo === 'ubicacion') {
-        map.flyTo({ center: CENTRO_SANTIAGO, zoom: 13.0, pitch: 60, bearing: -10, duration: 1500 });
-      } else if (modo === 'clima') {
+      if (modo === 'generales') {
+        map.flyTo({ center: CENTRO_SANTIAGO, zoom: 12.8, pitch: 66, bearing: -10, duration: 1400 });
+      } else if (modo === 'fisico') {
         contenedorSol.style.display = 'flex';
         atmosferaSolar.classList.add('activa');
-        setOpacidadSegura('luz-soleada-halo', 'line-opacity', 0.85);
-        setOpacidadSegura('borde-zona', 'line-opacity', 0.95);
+        actualizarCielo(true);
+        setOpacidadSegura('luz-soleada-halo', 'line-opacity', 0.9);
+        setOpacidadSegura('borde-zona', 'line-opacity', 0.98);
         animarPulsoSolar();
-
-        map.flyTo({ center: CENTRO_SANTIAGO, zoom: 11.1, pitch: 62, bearing: 12, duration: 1600 });
+        map.flyTo({ center: [-105.14, 21.84], zoom: 11.1, pitch: 72, bearing: 68, duration: 1500 });
+      } else if (modo === 'poblacion') {
+        map.flyTo({ center: [-105.2083, 21.8125], zoom: 13.7, pitch: 68, bearing: 25, duration: 1400 });
       } else if (modo === 'economia') {
-        map.flyTo({ center: [-105.45, 21.74], zoom: 11.8, pitch: 62, bearing: -20, duration: 1600 });
+        map.flyTo({ center: [-105.43, 21.74], zoom: 11.8, pitch: 68, bearing: -30, duration: 1500 });
+      } else if (modo === 'cultura') {
+        map.flyTo({ center: [-105.475, 21.905], zoom: 13.4, pitch: 68, bearing: -15, duration: 1500 });
+      } else if (modo === 'reflexion') {
+        map.flyTo({ center: [-105.32, 21.82], zoom: 11.3, pitch: 66, bearing: 10, duration: 1500 });
       }
 
       document.getElementById('infoFoto').src = datos[modo].foto;
       document.getElementById('infoTitulo').innerHTML = datos[modo].titulo;
       document.getElementById('infoLista').innerHTML = datos[modo].items.map(i => `<li>${i}</li>`).join('');
+      tarjeta.scrollTop = 0;
       tarjeta.style.display = 'block';
     }
   </script>
